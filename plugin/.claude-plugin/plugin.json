@@ -1,0 +1,16 @@
+{
+  "name": "cc-kit",
+  "version": "0.1.0",
+  "description": "Universal Claude Code harness: orchestrator-grade agents, workflow skills, safety hooks, and the /harness-init project generator.",
+  "author": {
+    "name": "KM Khalid Saifullah",
+    "url": "https://github.com/t-tasin"
+  },
+  "homepage": "https://github.com/t-tasin/cc-kit",
+  "repository": "https://github.com/t-tasin/cc-kit",
+  "license": "MIT",
+  "keywords": ["harness", "workflow", "subagents", "hooks", "tdd", "bootstrap"],
+  "skills": "./skills/",
+  "agents": "./agents/",
+  "hooks": "./hooks/hooks.json"
+}

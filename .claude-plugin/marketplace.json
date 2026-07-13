@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "cc-kit",
+  "description": "Reusable Claude Code harness — universal agents, skills, and gated hooks, plus a /harness-init generator that writes each project's committed layer.",
+  "owner": {
+    "name": "KM Khalid Saifullah",
+    "url": "https://github.com/t-tasin"
+  },
+  "plugins": [
+    {
+      "name": "cc-kit",
+      "description": "Universal Claude Code harness: orchestrator-grade agents, workflow skills, safety hooks, and the /harness-init project generator.",
+      "source": "./plugin",
+      "category": "productivity"
+    }
+  ]
+}
