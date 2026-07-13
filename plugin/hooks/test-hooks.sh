@@ -64,6 +64,31 @@ check() {
   rm -f "$errfile"
 }
 
+# checkout NAME SCRIPT PAYLOAD PROJECT_DIR WANT_RC STDOUT_MODE(empty|contains:TEXT)
+# Same shape as check(), but asserts on stdout instead of stderr — for hooks
+# (like security-nudge) whose observable output is a stdout nudge, not a
+# stderr deny message.
+checkout() {
+  local name="$1" script="$2" payload="$3" dir="$4" want="$5" mode="$6"
+  local out
+  out="$(printf '%s' "$payload" | CLAUDE_PROJECT_DIR="$dir" bash "$script" 2>/dev/null)"
+  local rc=$?
+  local ok=1
+  [ "$rc" -eq "$want" ] || ok=0
+  case "$mode" in
+    empty) [ -z "$out" ] || ok=0 ;;
+    contains:*)
+      local needle="${mode#contains:}"
+      printf '%s' "$out" | grep -qF -- "$needle" || ok=0
+      ;;
+  esac
+  if [ "$ok" -eq 1 ]; then echo "PASS: $name"; PASS=$((PASS+1))
+  else
+    echo "FAIL: $name (rc=$rc want=$want mode=$mode out=$out)"
+    FAIL=$((FAIL+1))
+  fi
+}
+
 ev() { printf '{"tool_name":"Edit","tool_input":{"file_path":"%s"}}' "$1"; }
 wv() { printf '{"tool_name":"Write","tool_input":{"file_path":"%s"}}' "$1"; }
 
@@ -119,6 +144,18 @@ out="$(CLAUDE_PROJECT_DIR="$marker_only" bash session-start.sh)"
 if [ "$?" -eq 0 ] && [ -z "$out" ]; then
   echo "PASS: session-start silent when marker present but protocol.md absent"; PASS=$((PASS+1))
 else echo "FAIL: session-start silent when marker present but protocol.md absent"; FAIL=$((FAIL+1)); fi
+
+# ---- security-nudge ----
+checkout "unkitted repo ignored (security-nudge)" \
+  security-nudge.sh "$(ev "$unkitted/src/auth/login.py")" "$unkitted" 0 empty
+checkout "security-sensitive path nudged (auth)" \
+  security-nudge.sh "$(ev "$kitted/src/auth/login.py")" "$kitted" 0 "contains:run /secure"
+checkout "security-sensitive path nudged (Dockerfile)" \
+  security-nudge.sh "$(ev "$kitted/Dockerfile")" "$kitted" 0 "contains:run /secure"
+checkout "non-sensitive file silent" \
+  security-nudge.sh "$(ev "$kitted/src/utils/math.py")" "$kitted" 0 empty
+checkout "malformed json fails open (security-nudge)" \
+  security-nudge.sh 'not-json' "$kitted" 0 empty
 
 echo "---"; echo "$PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ]

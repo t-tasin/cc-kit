@@ -125,6 +125,15 @@ anything else.
   it is not a defense against a malicious repo that ships the marker itself —
   the untrusted-content delimiters `session-start` wraps its injected protocol
   in are what handle that case.
+- **The post-implementation security loop is doctrine-plus-nudge, not a real
+  gate — and that's stated honestly, not glossed over.** Hooks can't dispatch
+  agents, so `security-nudge` can only print a one-line reminder to stdout
+  when an edit lands on a security-sensitive path; it can't invoke
+  `security-reviewer`/`silent-failure-hunter` itself and (like every hook here)
+  never blocks. The actual review is one command — the `secure` skill — backed
+  by `CLAUDE.md`/protocol doctrine that says to run it before merge. The
+  mechanical part is real (the nudge fires reliably); the enforcement part
+  still depends on someone running the command.
 
 ## What's in the plugin
 
@@ -136,11 +145,18 @@ anything else.
   `subagent-briefs` (how to write and iterate on a dispatch brief),
   `verify-task` (evidence-before-assertion discipline before calling anything
   done), `resume` (generic session pickup — board-aware if the project has
-  one).
+  one), `secure` (post-implementation security loop — dispatches
+  `security-reviewer` + `silent-failure-hunter` on the current diff, blocks
+  the merge recommendation on HIGH/CRITICAL findings).
 - **Hooks:** `secrets-guard` (blocks edits to `.env*`, `.env.example`
   excepted), `protect-generated` (blocks edits to files a project has declared
   generated), `session-start` (injects the project's `.claude/protocol.md` if
-  present). All three gate on `.claude/cc-kit.json` and fail open.
+  present), `security-nudge` (PostToolUse — prints a one-line reminder to run
+  `/secure` when an edit touches a security-sensitive path: Dockerfiles,
+  compose files, CI workflows, or a path naming auth/secret/token/session/
+  login/crypto/password). All four gate on `.claude/cc-kit.json` and fail
+  open; `security-nudge` additionally never exits nonzero — it nudges, it
+  never blocks.
 
 ## Trust note
 
