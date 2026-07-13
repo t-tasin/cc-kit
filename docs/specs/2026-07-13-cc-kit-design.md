@@ -46,9 +46,11 @@ cc-kit/
 │   │   └── resume/SKILL.md            # generic session pickup (board-aware if present)
 │   ├── hooks/
 │   │   ├── hooks.json                 # plugin hook registration
-│   │   ├── protect-generated.sh       # blocks edits to files listed in .claude/generated-files
+│   │   ├── protect-generated.sh       # blocks edits to files listed in .claude/cc-kit.json
 │   │   ├── secrets-guard.sh           # blocks .env* edits (.env.example allowed)
 │   │   └── session-start.sh           # injects project protocol if .claude/protocol.md exists
+│   │   # ALL universal hooks gate on .claude/cc-kit.json existing in the project —
+│   │   # un-kitted repos get instant exit 0 (plugin is safe to enable globally)
 ├── docs/specs/                        # this spec + future ones
 ├── README.md                          # public-facing: what/why/demo (§7)
 └── LICENSE                            # MIT
@@ -77,16 +79,21 @@ Run inside any project (new or existing). Behavior:
      `enabledPlugins` baseline; `effortLevel`; hooks wiring for project-local hooks if
      any.
    - `.claude/rules/<stack>.md` — one per *detected* stack only.
-   - `.claude/generated-files` — manifest consumed by `protect-generated.sh`
-     (e.g. basanos would list `tasks.json`).
+   - `.claude/cc-kit.json` — the kit manifest AND hook-activation marker:
+     `{ "tier": "full|lite", "generatedFiles": ["tasks.json", ...] }`. Universal
+     hooks no-op unless this file exists; `protect-generated.sh` reads
+     `generatedFiles` from it.
    - `.claude/protocol.md` — the short session-start protocol `session-start.sh`
      injects (tier-appropriate: full = board ritual, lite = read-CLAUDE.md reminder).
    - tier-full only: `TASKS.md` scaffold, gen script, `tasks/lessons.md` +
      `tasks/todo.md` seeds, CI sync-check snippet.
    - `.gitignore` additions: `CLAUDE.local.md`, `.claude/settings.local.json`,
      `.claude/worktrees/` (keeps shared files tracked).
-4. **Idempotent re-run** — if a harness exists: diff, reconcile, upgrade in place;
-   never clobber user customizations (marked sections / ask on conflict).
+4. **Idempotent re-run** — if a harness exists: diff, reconcile, upgrade in place.
+   Mechanism: generated regions are fenced with `<!-- cc-kit:managed:start -->` /
+   `<!-- cc-kit:managed:end -->` markers (JSON files: a `"_ccKitManaged"` key).
+   Re-init rewrites only managed regions; anything outside them is user-owned —
+   conflicts there are surfaced and asked about, never clobbered.
 
 ## 5. Design principles (inherited from basanos, baked into everything generated)
 
@@ -121,6 +128,10 @@ Run inside any project (new or existing). Behavior:
   cherry-picked from the ecc ecosystem at a pinned commit, with the
   quarry-not-framework rationale).
 - Clean conventional-commit history from the first commit.
+- **Trust honesty:** README states plainly that enabling the plugin means tracking
+  this repo's HEAD (same surface we critiqued in ecc — difference is size and
+  auditability: a handful of reviewable files, no wildcard always-on hooks, hooks
+  gated on an explicit per-project marker). Version pinning = future work (§9).
 
 ## 8. Testing
 
@@ -128,13 +139,15 @@ Run inside any project (new or existing). Behavior:
   pattern: crafted stdin payloads → expected exit codes; fail-open case included).
 - Frontmatter validation script (yaml-parse every agent/skill) wired as a CI check
   (GitHub Actions, free tier).
-- `/harness-init` acceptance: run against two fixture repos (a Python service, a
-  bare-new dir) in CI or scripted local check; assert generated files parse and tier
-  differences hold.
+- `/harness-init` acceptance: scripted **local** check (needs a live Claude session —
+  not CI-able without API spend/flakiness): run against two fixture repos (a Python
+  service, a bare-new dir); assert generated files parse, hooks activate, and tier
+  differences hold. CI covers only the static layers (hooks, frontmatter, manifests).
 
 ## 9. Out of scope (v1)
 
 - npm/npx installer, Codex/Cursor/other-harness adapters, paid/marketplace listing.
+- Plugin version pinning for consumers (v1 tracks repo HEAD; documented honestly).
 - Auto-migration of basanos (separate follow-up task on the basanos board).
 - Windows support for hook scripts (bash assumed; document it).
 
