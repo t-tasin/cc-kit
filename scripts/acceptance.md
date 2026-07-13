@@ -311,10 +311,40 @@ lines and the exact hook-block transcript excerpt from Scenario 3 Step 6 here,
 then carry this section into the tagging commit message or PR description:
 
 ```
-Scenario 1 (install):         <paste>
-Scenario 2 (fixture A, lite): <paste>
-Scenario 3 (fixture B, full): <paste>
-Scenario 4 (re-run survival): <paste>
+Run: 2026-07-13, claude CLI 2.1.207, macOS. Headless adaptation: /harness-init
+driven via `claude -p` sessions (plugin loaded); tier answers pre-authorized in
+the prompt (AskUserQuestion unavailable headless); --add-dir granted template
+reads and bypassPermissions granted .claude/ writes — both are one-time
+interactive approval prompts in a normal session, not kit defects.
+
+Scenario 1 (install):
+  First attempt FAILED — plugin.json declared "skills"/"agents"/"hooks" keys;
+  plugin schema rejected ("Validation errors: agents: Invalid input").
+  Fixed in 7774a5f (dirs are auto-discovered by convention). After fix:
+  ✔ Successfully added marketplace: cc-kit
+  ✔ Successfully installed plugin: cc-kit@cc-kit (scope: user)
+  PASS: cc-kit@cc-kit enabled in ~/.claude/settings.json
+
+Scenario 2 (fixture A, lite): 4/4
+  PASS: CLAUDE.md has managed fences
+  PASS: .claude/cc-kit.json parses, tier=lite
+  PASS: .claude/rules/python*.md exists
+  PASS: no TASKS.md on lite tier
+
+Scenario 3 (fixture B, full): all green
+  PASS: TASKS.md, scripts/gen_tasks_json.py, tasks/todo.md, tasks/lessons.md all exist
+  [gen_tasks_json] wrote tasks.json: 1 tasks {'NS': 1}
+  PASS: tasks.json written
+  PASS: tasks.json listed in .claude/cc-kit.json generatedFiles
+  Live hook block (verbatim transcript):
+    PreToolUse:Edit hook error: ["${CLAUDE_PLUGIN_ROOT}/hooks/protect-generated.sh"]:
+    cc-kit: tasks.json is generated — edit its source of truth and re-run its generator instead
+  BEFORE=f38976d4f28875ddc5ab878a3d8303f2  AFTER=f38976d4f28875ddc5ab878a3d8303f2
+  PASS: tasks.json unchanged after blocked Edit attempt
+
+Scenario 4 (re-run survival): 2/2
+  PASS: custom CLAUDE.md section survived /harness-init re-run
+  PASS: managed fences still present after re-run
 ```
 
 If any scenario fails, fix the underlying issue per Task 7 Step 3, re-run the
