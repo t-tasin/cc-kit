@@ -9,8 +9,5 @@
   "homepage": "https://github.com/t-tasin/cc-kit",
   "repository": "https://github.com/t-tasin/cc-kit",
   "license": "MIT",
-  "keywords": ["harness", "workflow", "subagents", "hooks", "tdd", "bootstrap"],
-  "skills": "./skills/",
-  "agents": "./agents/",
-  "hooks": "./hooks/hooks.json"
+  "keywords": ["harness", "workflow", "subagents", "hooks", "tdd", "bootstrap"]
 }
