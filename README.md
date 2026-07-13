@@ -109,14 +109,22 @@ anything else.
 - **Model is a default, not a lock.** Agent frontmatter sets a sensible model,
   but every dispatch can override it — architecture and security-sensitive work
   escalate regardless of what the frontmatter says.
-- **Review agents are structurally read-only.** `architect`, `security-reviewer`,
-  `silent-failure-hunter`, and `pr-test-analyzer` carry no `Edit`/`Write` tools
-  in their frontmatter — they cannot make changes, only report them.
+- **Review agents carry no edit tools — but that's an instruction boundary, not
+  a sandbox.** `architect`, `security-reviewer`, `silent-failure-hunter`, and
+  `pr-test-analyzer` carry no `Edit`/`Write` tools in their frontmatter, so they
+  cannot make changes through the tools Claude Code gives them. They are granted
+  `Bash`, which is for read-only inspection (running existing tests/linters,
+  `git diff`, `git log`) — that restriction is enforced by each agent's prompt,
+  not by the harness structurally blocking writes through `Bash`.
 - **Fail open.** Every hook that can't parse its input exits 0. A broken gate
   must never wedge a session.
 - **Hooks are gated on an explicit per-project marker.** All universal hooks
   check for `.claude/cc-kit.json` first and no-op instantly if it's absent —
   enabling the plugin globally is safe even in repos that haven't opted in.
+  That marker only keeps hooks quiet in repos that haven't opted into the kit;
+  it is not a defense against a malicious repo that ships the marker itself —
+  the untrusted-content delimiters `session-start` wraps its injected protocol
+  in are what handle that case.
 
 ## What's in the plugin
 
